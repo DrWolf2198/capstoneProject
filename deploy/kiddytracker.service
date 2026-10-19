@@ -1,0 +1,15 @@
+[Unit]
+Description=KiddyTracker Backend (FastAPI)
+After=network.target
+
+[Service]
+User=drwolf
+WorkingDirectory=/home/drwolf/projects/kiddytracker/backend
+Environment=DATABASE_URL=postgresql+psycopg2://kiddytracker:__DB_PASSWORD__@127.0.0.1:5432/kiddytracker
+Environment=JWT_SECRET=__JWT_SECRET__
+ExecStart=/home/drwolf/projects/kiddytracker/backend/venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
