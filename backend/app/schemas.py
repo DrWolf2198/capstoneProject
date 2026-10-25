@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr
 
 # ---------- Auth ----------
 class LoginRequest(BaseModel):
-    email: EmailStr
+    email: str  # bisa email atau nomor HP
     password: str
 
 
@@ -36,7 +36,7 @@ class TokenResponse(BaseModel):
 class PenggunaCreate(BaseModel):
     role: str
     nama: str
-    email: EmailStr
+    email: Optional[str] = None  # opsional; ortu cukup nomor HP
     password: str
     no_hp: Optional[str] = None
     foto: Optional[str] = None
@@ -44,6 +44,7 @@ class PenggunaCreate(BaseModel):
 
 class PenggunaUpdate(BaseModel):
     nama: Optional[str] = None
+    email: Optional[str] = None
     no_hp: Optional[str] = None
     foto: Optional[str] = None
     password: Optional[str] = None
@@ -66,6 +67,7 @@ class KelasOut(BaseModel):
 class MuridCreate(BaseModel):
     kelas_id: Optional[int] = None
     nama: str
+    tempat_lahir: Optional[str] = None
     tanggal_lahir: Optional[date] = None
     jenis_kelamin: Optional[str] = None
     foto: Optional[str] = None
@@ -76,6 +78,7 @@ class MuridOut(BaseModel):
     id: int
     kelas_id: Optional[int] = None
     nama: str
+    tempat_lahir: Optional[str] = None
     tanggal_lahir: Optional[date] = None
     jenis_kelamin: Optional[str] = None
     foto: Optional[str] = None

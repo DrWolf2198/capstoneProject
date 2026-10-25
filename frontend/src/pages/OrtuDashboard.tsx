@@ -10,11 +10,12 @@ import {
 } from "recharts";
 import AnakSelector from "../components/AnakSelector";
 import MediaLightbox from "../components/MediaLightbox";
+import WeekPicker, { toDateStr } from "../components/WeekPicker";
 import { cardCls } from "../components/ui";
 import { api } from "../lib/api";
 import { useAnakSelection } from "../lib/anak";
 import { getUser } from "../lib/auth";
-import type { Catatan, Dokumentasi, Kelas, Murid, RekapKehadiran, RingkasanMurid } from "../types";
+import type { Aspek, Catatan, Dokumentasi, Kategori, Kelas, Murid, Pencatatan, RekapKehadiran, RingkasanMurid } from "../types";
 
 function fmtTanggal(iso?: string | null): string {
   if (!iso) return "-";
@@ -55,10 +56,16 @@ export default function OrtuDashboard() {
   const [isi, setIsi] = useState("");
   const [msg, setMsg] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<Dokumentasi | null>(null);
+  const [penilaian, setPenilaian] = useState<Pencatatan[]>([]);
+  const [aspekList, setAspekList] = useState<Aspek[]>([]);
+  const [kategori, setKategori] = useState<Kategori[]>([]);
+  const [selectedDate, setSelectedDate] = useState(() => toDateStr(new Date()));
 
   useEffect(() => {
     api<Murid[]>("/murid").then(setMurid).catch(() => {});
     api<Kelas[]>("/kelas").then(setKelas).catch(() => {});
+    api<Aspek[]>("/aspek").then(setAspekList).catch(() => {});
+    api<Kategori[]>("/kategori").then(setKategori).catch(() => {});
   }, []);
 
   const { anakId, pilih } = useAnakSelection(murid);
@@ -70,6 +77,7 @@ export default function OrtuDashboard() {
       .catch(() => {});
     api<Dokumentasi[]>(`/dokumentasi/murid/${anakId}`).then(setDokumentasi).catch(() => {});
     api<Catatan[]>(`/catatan/murid/${anakId}`).then(setCatatan).catch(() => {});
+    api<Pencatatan[]>(`/pencatatan/murid/${anakId}`).then(setPenilaian).catch(() => {});
     api<{ unread: number }>(`/catatan/murid/${anakId}/unread`)
       .then((d) => setUnread(d.unread))
       .catch(() => {});
@@ -91,6 +99,14 @@ export default function OrtuDashboard() {
     if (!ringkasan || ringkasan.radar.length === 0) return null;
     return [...ringkasan.radar].sort((a, b) => b.level - a.level)[0];
   }, [ringkasan]);
+
+  const kategoriWarna = useMemo(() => {
+    const m: Record<string, string> = {};
+    kategori.forEach((k) => (m[k.nama] = k.warna));
+    return m;
+  }, [kategori]);
+
+  const penilaianHariIni = penilaian.filter((p) => p.tanggal === selectedDate);
 
   const kirimBalasan = async () => {
     if (!anakId || !isi.trim()) return;
@@ -169,57 +185,91 @@ export default function OrtuDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-[400px_1fr] gap-5 mb-6">
         <div className={cardCls}>
           <h2 className="font-bold text-ink">Profil Perkembangan</h2>
-          <p className="text-xs text-body/50 mb-3">
-            Penilaian terakhir — {fmtTanggal(ringkasan?.penilaian_terakhir)}
-          </p>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={ringkasan?.radar ?? []} outerRadius="75%">
-                <PolarGrid stroke="#e2e8f0" />
-                <PolarAngleAxis dataKey="aspek" tick={{ fontSize: 11, fill: "#334155" }} />
-                <PolarRadiusAxis domain={[0, 4]} tickCount={5} tick={{ fontSize: 10 }} />
-                <Radar dataKey="level" stroke="#3b97bc" fill="#3b97bc" fillOpacity={0.3} strokeWidth={2} />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
+        <p className="text-xs text-body/50 mb-3">
+          Penilaian terakhir — {fmtTanggal(ringkasan?.penilaian_terakhir)}
+        </p>
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart data={ringkasan?.radar ?? []} outerRadius="75%">
+              <PolarGrid stroke="#e2e8f0" />
+              <PolarAngleAxis dataKey="aspek" tick={{ fontSize: 11, fill: "#334155" }} />
+              <PolarRadiusAxis domain={[0, 4]} tickCount={5} tick={{ fontSize: 10 }} />
+              <Radar dataKey="level" stroke="#3b97bc" fill="#3b97bc" fillOpacity={0.3} strokeWidth={2} />
+            </RadarChart>
+          </ResponsiveContainer>
         </div>
+      </div>
 
         <div className={cardCls}>
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-            <h2 className="font-bold text-ink">Dokumentasi Terbaru</h2>
-            <Link to="/riwayat" className="text-xs font-semibold text-green-600 hover:underline">
-              Lihat semua
-            </Link>
-          </div>
-          {media.length === 0 ? (
-            <p className="text-sm text-body/50">Belum ada dokumentasi.</p>
-          ) : (
-            <div className="grid grid-cols-3 gap-2">
-              {media.slice(0, 3).map((d) => (
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
+            <h2 className="font-bold text-ink">Dokumentasi</h2>
+          <Link
+            to={media[0] ? `/riwayat?tanggal=${media[0].tanggal}` : "/riwayat"}
+            className="text-xs font-semibold text-green-600 hover:underline"
+          >
+            Lihat Full Riwayat
+          </Link>
+        </div>
+        {media.length === 0 ? (
+          <p className="text-sm text-body/50">Belum ada dokumentasi.</p>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {media.map((d) => (
                 <button
                   key={d.id}
                   type="button"
                   onClick={() => d.url && setSelectedMedia(d)}
                   disabled={!d.url}
-                  className="aspect-[7/5] rounded-lg overflow-hidden bg-slate-200 flex items-center justify-center hover:opacity-90 transition disabled:cursor-default"
+                  className="text-left group disabled:cursor-default"
                 >
-                  {d.tipe === "foto" && d.url ? (
-                    <img src={d.url} alt={d.deskripsi ?? ""} className="w-full h-full object-cover" />
-                  ) : d.tipe === "video" ? (
-                    <i className="ri-play-circle-line text-4xl text-slate-400" />
-                  ) : d.url ? (
-                    <img src={d.url} alt={d.deskripsi ?? ""} className="w-full h-full object-cover" />
-                  ) : (
-                    <i className="ri-image-line text-3xl text-slate-400" />
-                  )}
+                  <div className="aspect-[7/5] rounded-lg overflow-hidden bg-slate-200 flex items-center justify-center group-hover:opacity-90 transition">
+                    {d.tipe === "video" ? (
+                      <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                        <i className="ri-play-circle-fill text-4xl text-white" />
+                      </div>
+                    ) : d.url ? (
+                      <img src={d.url} alt={d.deskripsi ?? ""} className="w-full h-full object-cover" />
+                    ) : (
+                      <i className="ri-image-line text-3xl text-slate-400" />
+                    )}
+                  </div>
+                  <div className="mt-1 text-[11px] text-body/50 capitalize truncate">
+                    {d.tipe.replace("_", " ")}
+                  </div>
                 </button>
               ))}
             </div>
           )}
-          {media[0] && (
-            <p className="text-[11px] text-body/40 mt-2">
-              {media[0].deskripsi || media[0].tipe} — {fmtTanggal(media[0].tanggal)}
-            </p>
+        </div>
+      </div>
+
+      <div className={cardCls + " mb-6"}>
+        <h2 className="font-bold text-ink mb-3">Penilaian Perkembangan</h2>
+        <WeekPicker value={selectedDate} onChange={setSelectedDate} />
+        <div className="mt-4">
+          {aspekList.length === 0 ? (
+            <p className="text-sm text-body/50">Belum ada data aspek penilaian.</p>
+          ) : (
+            <ul className="divide-y divide-black/5">
+              {aspekList.map((a) => {
+                const p = penilaianHariIni.find((x) => x.aspek_id === a.id);
+                return (
+                  <li key={a.id} className="py-3 flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-ink">{a.nama}</span>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {p?.deskripsi && <span className="text-xs text-body/60 truncate max-w-[220px]">{p.deskripsi}</span>}
+                      {p?.kategori ? (
+                        <span className="px-2.5 py-1 rounded-md text-xs font-bold text-white flex-none" style={{ background: kategoriWarna[p.kategori] ?? "#94a3b8" }}>
+                          {p.kategori}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-body/40">—</span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </div>
       </div>

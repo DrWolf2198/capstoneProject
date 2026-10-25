@@ -12,7 +12,7 @@ interface LoginResp {
 }
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,7 +25,7 @@ export default function Login() {
     try {
       const res = await api<LoginResp>("/auth/login", {
         method: "POST",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email: identifier, password }),
       });
       setAuth(res.access_token, res.user);
       navigate("/dashboard");
@@ -53,10 +53,10 @@ export default function Login() {
             </div>
           )}
           <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="Email / Nomor HP"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
             required
             className={inputCls}
           />
@@ -72,12 +72,6 @@ export default function Login() {
             {loading ? "Memuat..." : "Masuk"}
           </button>
         </form>
-        <div className="mt-6 text-xs text-body/60 leading-relaxed">
-          <div className="font-semibold mb-1">Akun demo:</div>
-          <div>admin@kiddytracker.id / admin123</div>
-          <div>guru@kiddytracker.id / guru123</div>
-          <div>ortu@kiddytracker.id / ortu123</div>
-        </div>
       </div>
     </div>
   );

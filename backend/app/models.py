@@ -50,6 +50,7 @@ class Murid(Base):
     id = Column(Integer, primary_key=True)
     kelas_id = Column(Integer, ForeignKey("kelas.id", ondelete="SET NULL"))
     nama = Column(String(255), nullable=False, index=True)
+    tempat_lahir = Column(String(255))
     tanggal_lahir = Column(Date)
     jenis_kelamin = Column(String(1))  # L | P
     foto = Column(Text)

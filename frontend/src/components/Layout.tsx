@@ -28,7 +28,6 @@ const NAV: Record<Role, { to: string; label: string; icon: string }[]> = {
   ],
   ortu: [
     { to: "/dashboard", label: "Dashboard", icon: "ri-dashboard-line" },
-    { to: "/catatan", label: "Catatan", icon: "ri-chat-3-line" },
     { to: "/kalender", label: "Kalender", icon: "ri-calendar-2-line" },
     { to: "/riwayat", label: "Riwayat", icon: "ri-history-line" },
     { to: "/profil", label: "Profil", icon: "ri-user-3-line" },

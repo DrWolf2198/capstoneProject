@@ -1,7 +1,11 @@
 """Laporan perkembangan anak: gabungan penilaian, absensi, dokumentasi, catatan."""
 from datetime import date
+from io import BytesIO
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+from openpyxl import Workbook
+from openpyxl.styles import Font
 from sqlalchemy.orm import Session
 
 from .. import access, models
@@ -138,3 +142,63 @@ def laporan_murid(
         "dokumentasi": dokumentasi,
         "catatan": catatan,
     }
+
+
+@router.get("/export/penilaian")
+def export_penilaian(
+    kelas_id: int | None = None,
+    bulan: str | None = None,
+    db: Session = Depends(get_db),
+    user: models.Pengguna = Depends(get_current_user),
+):
+    """Export data penilaian ke Excel (.xlsx) — scoped ke murid yang bisa diakses user."""
+    ids = access.murid_ids_for(user, db)
+    if not ids:
+        raise HTTPException(403, "Tidak ada akses")
+
+    rentang = _parse_bulan(bulan)
+
+    q = (
+        db.query(models.PencatatanPerkembangan)
+        .join(models.Murid, models.PencatatanPerkembangan.murid_id == models.Murid.id)
+        .filter(models.Murid.id.in_(ids))
+    )
+    if kelas_id:
+        q = q.filter(models.Murid.kelas_id == kelas_id)
+    if rentang:
+        q = q.filter(
+            models.PencatatanPerkembangan.tanggal >= rentang[0],
+            models.PencatatanPerkembangan.tanggal < rentang[1],
+        )
+
+    rows = q.order_by(models.Murid.nama, models.PencatatanPerkembangan.tanggal).all()
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Penilaian"
+    ws.append(["No", "Nama Murid", "Kelas", "Aspek", "Capaian", "Catatan", "Tanggal"])
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+    for i, p in enumerate(rows, 1):
+        ws.append([
+            i,
+            p.murid.nama,
+            p.murid.kelas.nama if p.murid.kelas else "-",
+            p.aspek.nama if p.aspek else "-",
+            p.kategori,
+            p.deskripsi,
+            p.tanggal.isoformat(),
+        ])
+
+    for idx, w in enumerate([5, 26, 10, 24, 10, 42, 12], 1):
+        ws.column_dimensions[ws.cell(row=1, column=idx).column_letter].width = w
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    filename = f"penilaian-{bulan if bulan else 'semua'}.xlsx"
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )

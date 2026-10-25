@@ -21,12 +21,23 @@ def create_pengguna(body: schemas.PenggunaCreate, db: Session = Depends(get_db),
         raise HTTPException(400, "Role tidak valid")
     if body.role == models.ROLE_ADMIN and user.role != models.ROLE_SUPERADMIN:
         raise HTTPException(403, "Hanya super admin yang dapat membuat akun admin")
-    if db.query(models.Pengguna).filter(models.Pengguna.email == body.email).first():
+
+    # tentukan email: ortu cukup nomor HP (email digenerate otomatis)
+    email = body.email
+    if not email:
+        if body.role == models.ROLE_ORTU:
+            if not body.no_hp:
+                raise HTTPException(400, "Nomor telepon wajib diisi untuk orang tua")
+            email = f"ortu.{body.no_hp}@kiddytracker.id"
+        else:
+            raise HTTPException(400, "Email wajib diisi")
+
+    if db.query(models.Pengguna).filter(models.Pengguna.email == email).first():
         raise HTTPException(400, "Email sudah terdaftar")
     p = models.Pengguna(
         role=body.role,
         nama=body.nama,
-        email=body.email,
+        email=email,
         password_hash=security.hash_password(body.password),
         no_hp=body.no_hp,
         foto=body.foto,
@@ -52,6 +63,8 @@ def update_pengguna(pengguna_id: int, body: schemas.PenggunaUpdate, db: Session 
         raise HTTPException(404, "Pengguna tidak ditemukan")
     if body.nama is not None:
         p.nama = body.nama
+    if body.email is not None:
+        p.email = body.email
     if body.no_hp is not None:
         p.no_hp = body.no_hp
     if body.foto is not None:

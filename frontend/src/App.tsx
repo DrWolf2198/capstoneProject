@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import Layout from "./components/Layout";
 import { getUser } from "./lib/auth";
+import type { Role } from "./types";
 import Dashboard from "./pages/Dashboard";
 import Catatan from "./pages/Catatan";
 import DataMaster from "./pages/DataMaster";
@@ -19,6 +20,12 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
+  const user = getUser();
+  if (!user || !roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <Routes>
@@ -33,13 +40,55 @@ export default function App() {
       >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="data-master" element={<DataMaster />} />
-        <Route path="pencatatan" element={<Pencatatan />} />
-        <Route path="sesi" element={<Sesi />} />
-        <Route path="dokumentasi" element={<Dokumentasi />} />
+        <Route
+          path="data-master"
+          element={
+            <RequireRole roles={["admin", "superadmin"]}>
+              <DataMaster />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="pencatatan"
+          element={
+            <RequireRole roles={["guru"]}>
+              <Pencatatan />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="sesi"
+          element={
+            <RequireRole roles={["guru"]}>
+              <Sesi />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="dokumentasi"
+          element={
+            <RequireRole roles={["guru"]}>
+              <Dokumentasi />
+            </RequireRole>
+          }
+        />
         <Route path="kalender" element={<KalenderAkademik />} />
-        <Route path="laporan" element={<Laporan />} />
-        <Route path="catatan" element={<Catatan />} />
+        <Route
+          path="laporan"
+          element={
+            <RequireRole roles={["admin", "superadmin", "guru"]}>
+              <Laporan />
+            </RequireRole>
+          }
+        />
+        <Route
+          path="catatan"
+          element={
+            <RequireRole roles={["guru", "ortu"]}>
+              <Catatan />
+            </RequireRole>
+          }
+        />
         <Route path="riwayat" element={<Riwayat />} />
         <Route path="profil" element={<Profil />} />
       </Route>

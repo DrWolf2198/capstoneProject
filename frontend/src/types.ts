@@ -19,6 +19,7 @@ export interface Murid {
   id: number;
   kelas_id?: number | null;
   nama: string;
+  tempat_lahir?: string | null;
   tanggal_lahir?: string | null;
   jenis_kelamin?: string | null;
   foto?: string | null;

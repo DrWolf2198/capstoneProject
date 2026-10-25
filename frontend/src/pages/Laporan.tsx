@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { btnPrimary, cardCls, selectCls } from "../components/ui";
 import { api } from "../lib/api";
-import { getUser } from "../lib/auth";
+import { getToken, getUser } from "../lib/auth";
 import type { Kategori, LaporanMurid, Murid } from "../types";
 
 function fmtTanggal(iso?: string | null): string {
@@ -74,15 +74,45 @@ export default function Laporan() {
     return found.sort((a, b) => order.indexOf(b.kategori ?? "") - order.indexOf(a.kategori ?? ""))[0].kategori;
   }, [data, kategori]);
 
+  const exportExcel = async () => {
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/laporan/export/penilaian?bulan=${bulan}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        alert((err && (err.detail || err.message)) || "Gagal export");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `penilaian-${bulan}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Gagal export");
+    }
+  };
+
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-1">
         <h1 className="text-2xl font-black text-ink">Laporan Perkembangan</h1>
-        {data && (
-          <button onClick={() => window.print()} className={`${btnPrimary} no-print`}>
-            <i className="ri-printer-line mr-1.5" /> Cetak Laporan
+        <div className="flex flex-wrap gap-2 no-print">
+          <button onClick={exportExcel} className={btnPrimary}>
+            <i className="ri-file-excel-2-line mr-1.5" /> Export
           </button>
-        )}
+          {data && (
+            <button onClick={() => window.print()} className={btnPrimary}>
+              <i className="ri-printer-line mr-1.5" /> Cetak Laporan
+            </button>
+          )}
+        </div>
       </div>
       <p className="text-sm text-body/70 mb-6">
         Rekap otomatis penilaian, kehadiran, dokumentasi, dan catatan dalam satu periode.

@@ -13,11 +13,14 @@ router = APIRouter()
 def login(body: schemas.LoginRequest, db: Session = Depends(get_db)):
     user = (
         db.query(models.Pengguna)
-        .filter(models.Pengguna.email == body.email)
+        .filter(
+            (models.Pengguna.email == body.email)
+            | (models.Pengguna.no_hp == body.email)
+        )
         .first()
     )
     if user is None or not security.verify_password(body.password, user.password_hash):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Email atau password salah")
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Email/nomor HP atau password salah")
     token = security.create_access_token(user.id, user.role)
     return {"access_token": token, "token_type": "bearer", "user": user}
 
