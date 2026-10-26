@@ -118,7 +118,7 @@ class Catatan(Base):
     murid_id = Column(Integer, ForeignKey("murid.id", ondelete="CASCADE"), nullable=False, index=True)
     pengguna_id = Column(Integer, ForeignKey("pengguna.id"), nullable=False)
     isi = Column(Text, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
 
     murid = relationship("Murid")
     pengguna = relationship("Pengguna")
@@ -131,7 +131,7 @@ class CatatanBaca(Base):
 
     murid_id = Column(Integer, ForeignKey("murid.id", ondelete="CASCADE"), primary_key=True)
     pengguna_id = Column(Integer, ForeignKey("pengguna.id", ondelete="CASCADE"), primary_key=True)
-    last_read_at = Column(DateTime, default=datetime.utcnow)
+    last_read_at = Column(DateTime, default=datetime.now)
 
     murid = relationship("Murid")
     pengguna = relationship("Pengguna")
@@ -148,7 +148,7 @@ class SesiKelas(Base):
     tanggal = Column(Date, nullable=False, index=True)
     tema = Column(String(255))
     deskripsi = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
 
     kelas = relationship("Kelas")
     guru = relationship("Pengguna")
@@ -206,7 +206,7 @@ class AgendaAkademik(Base):
     judul = Column(String(255), nullable=False)
     kategori = Column(String(30), nullable=False)
     deskripsi = Column(Text)
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
 
 
 class AuditLog(Base):
@@ -218,4 +218,4 @@ class AuditLog(Base):
     pengguna_id = Column(Integer, ForeignKey("pengguna.id", ondelete="SET NULL"))
     metode = Column(String(10))
     path = Column(String(255))
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)

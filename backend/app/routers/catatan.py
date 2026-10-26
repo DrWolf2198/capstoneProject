@@ -125,7 +125,7 @@ def mark_read(
         )
         .first()
     )
-    now = datetime.utcnow()
+    now = datetime.now()
     if last:
         last.last_read_at = now
     else:
