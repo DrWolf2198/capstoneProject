@@ -162,6 +162,10 @@ class CatatanCreate(BaseModel):
     isi: str
 
 
+class CatatanUpdate(BaseModel):
+    isi: str
+
+
 class CatatanOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int

@@ -159,6 +159,16 @@ export default function WeeklyActivities() {
     setActivities((prev) => prev.filter((a) => a.id !== id));
   };
 
+  const hapusDokumentasi = async (id: number) => {
+    if (!confirm("Hapus dokumentasi ini?")) return;
+    try {
+      await api(`/dokumentasi/${id}`, { method: "DELETE" });
+      setDokumentasi((prev) => prev.filter((d) => d.id !== id));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Gagal menghapus");
+    }
+  };
+
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -326,12 +336,15 @@ export default function WeeklyActivities() {
               ))}
             </div>
             {butuhBerkas && (
-              <input
-                type="file"
-                accept={tipeAktif.accept}
-                onChange={onFileChange}
-                className="block w-full text-sm text-body/70 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-sm file:font-semibold hover:file:bg-primary-dark cursor-pointer"
-              />
+              <>
+                <input
+                  type="file"
+                  accept={tipeAktif.accept}
+                  onChange={onFileChange}
+                  className="block w-full text-sm text-body/70 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-sm file:font-semibold hover:file:bg-primary-dark cursor-pointer"
+                />
+                <p className="text-[11px] text-body/40 mt-1">Ukuran file maks. 20 MB</p>
+              </>
             )}
             {uploading && <p className="text-sm text-body/60">Mengupload...</p>}
             {url && isImage && (
@@ -352,23 +365,33 @@ export default function WeeklyActivities() {
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {dokumentasi.map((d) => (
-              <button key={d.id} onClick={() => d.url && setLightbox(d)} className="text-left group">
-                <div className="aspect-[7/5] rounded-lg overflow-hidden bg-slate-200 flex items-center justify-center group-hover:opacity-90 transition">
-                  {d.url && d.tipe === "foto" ? (
-                    <img src={d.url} alt={d.deskripsi ?? ""} className="w-full h-full object-cover" />
-                  ) : d.url && d.tipe === "video" ? (
-                    <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                      <i className="ri-play-circle-fill text-4xl text-white" />
-                    </div>
-                  ) : (
-                    <i className={`${TIPE.find((t) => t.id === d.tipe)?.icon ?? "ri-file-line"} text-3xl text-body/40`} />
-                  )}
-                </div>
-                <div className="mt-1.5">
-                  <div className="text-sm font-semibold text-ink truncate">{muridMap[d.murid_id] ?? "Murid"}</div>
-                  <div className="text-[11px] text-body/50 capitalize truncate">{d.tipe.replace("_", " ")}</div>
-                </div>
-              </button>
+              <div key={d.id} className="relative group">
+                <button onClick={() => d.url && setLightbox(d)} className="text-left w-full">
+                  <div className="aspect-[7/5] rounded-lg overflow-hidden bg-slate-200 flex items-center justify-center group-hover:opacity-90 transition">
+                    {d.url && d.tipe === "foto" ? (
+                      <img src={d.url} alt={d.deskripsi ?? ""} className="w-full h-full object-cover" />
+                    ) : d.url && d.tipe === "video" ? (
+                      <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                        <i className="ri-play-circle-fill text-4xl text-white" />
+                      </div>
+                    ) : (
+                      <i className={`${TIPE.find((t) => t.id === d.tipe)?.icon ?? "ri-file-line"} text-3xl text-body/40`} />
+                    )}
+                  </div>
+                  <div className="mt-1.5">
+                    <div className="text-sm font-semibold text-ink truncate">{muridMap[d.murid_id] ?? "Murid"}</div>
+                    <div className="text-[11px] text-body/50 capitalize truncate">{d.tipe.replace("_", " ")}</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => hapusDokumentasi(d.id)}
+                  className="absolute top-1.5 right-1.5 w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                  aria-label="Hapus"
+                  title="Hapus"
+                >
+                  <i className="ri-delete-bin-line text-sm" />
+                </button>
+              </div>
             ))}
           </div>
         )}

@@ -105,3 +105,22 @@ def list_dokumentasi_semua(
         q = q.filter(models.Dokumentasi.tanggal == tanggal)
         return q.order_by(models.Dokumentasi.id.desc()).all()
     return q.order_by(models.Dokumentasi.tanggal.desc(), models.Dokumentasi.id.desc()).limit(30).all()
+
+
+@router.delete("/{dokumentasi_id}", status_code=204)
+def delete_dokumentasi(
+    dokumentasi_id: int,
+    db: Session = Depends(get_db),
+    user: models.Pengguna = Depends(_uploader),
+):
+    """Hapus dokumentasi beserta berkasnya (admin/guru)."""
+    d = db.get(models.Dokumentasi, dokumentasi_id)
+    if d is None:
+        raise HTTPException(404, "Dokumentasi tidak ditemukan")
+    if not access.can_access_murid(user, d.murid_id, db):
+        raise HTTPException(403, "Akses ditolak")
+    if d.url and d.url.startswith("/uploads/"):
+        fpath = UPLOAD_DIR / os.path.basename(d.url)
+        fpath.unlink(missing_ok=True)
+    db.delete(d)
+    db.commit()

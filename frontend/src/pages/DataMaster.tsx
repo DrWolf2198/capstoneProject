@@ -508,6 +508,7 @@ function MuridTab() {
               onChange={onFoto}
               className="block w-full text-sm text-body/70 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-white file:text-sm file:font-semibold cursor-pointer"
             />
+            <p className="text-[11px] text-body/40">Ukuran file maks. 20 MB</p>
             {foto && <img src={foto} alt="Foto murid" className="w-24 h-24 object-cover rounded-lg border border-black/10" />}
           </div>
           <div className="flex gap-2">

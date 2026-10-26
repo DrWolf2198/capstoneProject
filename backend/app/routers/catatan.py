@@ -26,6 +26,25 @@ def create_catatan(
     return _to_out(c)
 
 
+@router.put("/{catatan_id}", response_model=schemas.CatatanOut)
+def update_catatan(
+    catatan_id: int,
+    body: schemas.CatatanUpdate,
+    db: Session = Depends(get_db),
+    user: models.Pengguna = Depends(get_current_user),
+):
+    """Edit isi catatan (hanya penulisnya)."""
+    c = db.get(models.Catatan, catatan_id)
+    if c is None:
+        raise HTTPException(404, "Catatan tidak ditemukan")
+    if c.pengguna_id != user.id:
+        raise HTTPException(403, "Hanya penulis yang bisa mengedit")
+    c.isi = body.isi
+    db.commit()
+    db.refresh(c)
+    return _to_out(c)
+
+
 @router.get("/murid/{murid_id}", response_model=list[schemas.CatatanOut])
 def list_catatan(
     murid_id: int,
