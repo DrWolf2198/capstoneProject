@@ -55,6 +55,8 @@ export default function OrtuDashboard() {
   const [rekapKehadiran, setRekapKehadiran] = useState<RekapKehadiran | null>(null);
   const [isi, setIsi] = useState("");
   const [msg, setMsg] = useState("");
+  const [editingCatatanId, setEditingCatatanId] = useState<number | null>(null);
+  const [editIsiCatatan, setEditIsiCatatan] = useState("");
   const [selectedMedia, setSelectedMedia] = useState<Dokumentasi | null>(null);
   const [penilaian, setPenilaian] = useState<Pencatatan[]>([]);
   const [aspekList, setAspekList] = useState<Aspek[]>([]);
@@ -132,6 +134,25 @@ export default function OrtuDashboard() {
       setMsg(err instanceof Error ? err.message : "Gagal mengirim");
       setTimeout(() => setMsg(""), 2500);
     }
+  };
+
+  const simpanEditCatatan = async (id: number) => {
+    if (!editIsiCatatan.trim()) return;
+    try {
+      await api(`/catatan/${id}`, { method: "PUT", body: JSON.stringify({ isi: editIsiCatatan.trim() }) });
+      setEditingCatatanId(null);
+      setEditIsiCatatan("");
+      load();
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Gagal menyimpan");
+      setTimeout(() => setMsg(""), 2500);
+    }
+  };
+
+  const hapusCatatan = async (id: number) => {
+    if (!confirm("Hapus catatan ini?")) return;
+    await api(`/catatan/${id}`, { method: "DELETE" });
+    load();
   };
 
   const kpi = [
@@ -306,6 +327,7 @@ export default function OrtuDashboard() {
           <div className="space-y-3 mb-4">
             {catatan.map((c) => {
               const isGuru = c.role === "guru";
+              const sendiri = c.pengguna_id === user?.id;
               return (
                 <div key={c.id} className="flex gap-2.5">
                   <div
@@ -315,12 +337,57 @@ export default function OrtuDashboard() {
                   >
                     {c.nama_pengguna?.charAt(0) ?? "?"}
                   </div>
-                  <div className="min-w-0">
-                    <div className="text-[11px] text-body/50">
-                      {c.nama_pengguna ?? "?"}
-                      {c.pengguna_id === user?.id ? " (Anda)" : ""} · {fmtWaktu(c.created_at)}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="text-[11px] text-body/50">
+                        {c.nama_pengguna ?? "?"}
+                        {sendiri ? " (Anda)" : ""} · {fmtWaktu(c.created_at)}
+                      </div>
+                      {sendiri && editingCatatanId !== c.id && (
+                        <div className="flex items-center gap-1 ml-auto">
+                          <button
+                            onClick={() => { setEditingCatatanId(c.id); setEditIsiCatatan(c.isi); }}
+                            className="text-primary hover:text-primary/70 text-sm"
+                            aria-label="Edit"
+                          >
+                            <i className="ri-edit-line" />
+                          </button>
+                          <button
+                            onClick={() => hapusCatatan(c.id)}
+                            className="text-red-500 hover:text-red-700 text-sm"
+                            aria-label="Hapus"
+                          >
+                            <i className="ri-delete-bin-line" />
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-sm text-ink">{c.isi}</p>
+                    {editingCatatanId === c.id ? (
+                      <div className="mt-1.5">
+                        <textarea
+                          className="w-full border border-black/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary resize-none"
+                          rows={2}
+                          value={editIsiCatatan}
+                          onChange={(e) => setEditIsiCatatan(e.target.value)}
+                        />
+                        <div className="flex gap-2 mt-1.5">
+                          <button
+                            onClick={() => simpanEditCatatan(c.id)}
+                            className="bg-primary text-white rounded-lg px-3 py-1 text-xs font-semibold hover:bg-primary/80 transition"
+                          >
+                            Simpan
+                          </button>
+                          <button
+                            onClick={() => { setEditingCatatanId(null); setEditIsiCatatan(""); }}
+                            className="text-body/60 hover:text-body rounded-lg px-3 py-1 text-xs font-semibold"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-ink">{c.isi}</p>
+                    )}
                   </div>
                 </div>
               );
