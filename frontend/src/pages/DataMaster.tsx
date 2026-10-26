@@ -488,15 +488,15 @@ function MuridTab() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <form onSubmit={submit} className={`${cardCls} space-y-3`}>
           <h2 className="font-bold text-ink">{editingId ? "Edit Murid" : "Daftarkan Murid"}</h2>
-          <input className={inputCls} placeholder="Nama murid" value={nama} onChange={(e) => setNama(e.target.value)} required />
-          <input className={inputCls} placeholder="Tempat lahir (mis. Surakarta)" value={tempatLahir} onChange={(e) => setTempatLahir(e.target.value)} />
-          <select className={selectCls} value={kelasId} onChange={(e) => setKelasId(e.target.value)}>
-            <option value="">Pilih kelas</option>
+          <input className={inputCls} placeholder="Nama murid *" value={nama} onChange={(e) => setNama(e.target.value)} required />
+          <input className={inputCls} placeholder="Tempat lahir (mis. Surakarta) *" value={tempatLahir} onChange={(e) => setTempatLahir(e.target.value)} required />
+          <select className={selectCls} value={kelasId} onChange={(e) => setKelasId(e.target.value)} required>
+            <option value="">Pilih kelas *</option>
             {kelas.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
           </select>
           <input className={inputCls} type="date" value={tgl} onChange={(e) => setTgl(e.target.value)} />
-          <select className={selectCls} value={jk} onChange={(e) => setJk(e.target.value)}>
-            <option value="">Jenis kelamin</option>
+          <select className={selectCls} value={jk} onChange={(e) => setJk(e.target.value)} required>
+            <option value="">Jenis kelamin *</option>
             <option value="L">Laki-laki</option>
             <option value="P">Perempuan</option>
           </select>
@@ -624,16 +624,16 @@ function PenggunaTab({ fixedRole }: { fixedRole: "guru" | "ortu" | "admin" }) {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <form onSubmit={submit} className={`${cardCls} space-y-3`}>
         <h2 className="font-bold text-ink">{editingId ? `Edit ${label}` : `Tambah ${label}`}</h2>
-        <input className={inputCls} placeholder="Nama" value={nama} onChange={(e) => setNama(e.target.value)} required />
+        <input className={inputCls} placeholder="Nama *" value={nama} onChange={(e) => setNama(e.target.value)} required />
         {isOrtu ? (
-          <input className={inputCls} type="tel" placeholder="Nomor Telepon" value={noHp} onChange={(e) => setNoHp(e.target.value)} required />
+          <input className={inputCls} type="tel" placeholder="Nomor Telepon *" value={noHp} onChange={(e) => setNoHp(e.target.value)} required />
         ) : (
-          <input className={inputCls} type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+          <input className={inputCls} type="email" placeholder="Email *" value={email} onChange={(e) => setEmail(e.target.value)} required />
         )}
         <input
           className={inputCls}
           type="password"
-          placeholder={editingId ? "Password baru (kosongkan jika tetap)" : "Password"}
+          placeholder={editingId ? "Password baru (kosongkan jika tetap)" : "Password *"}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required={!editingId}
