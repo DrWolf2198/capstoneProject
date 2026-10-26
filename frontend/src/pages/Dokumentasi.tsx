@@ -38,8 +38,13 @@ function ActivityCard({ sesi, onDelete }: { sesi: SesiKelas; onDelete: () => voi
   const [tema, setTema] = useState(sesi.tema ?? "");
   const [deskripsi, setDeskripsi] = useState(sesi.deskripsi ?? "");
   const [msg, setMsg] = useState("");
+  const [popupError, setPopupError] = useState<string | null>(null);
 
   const simpan = async () => {
+    if (!tema.trim()) {
+      setPopupError("Tema aktivitas wajib diisi sebelum disimpan.");
+      return;
+    }
     try {
       await api(`/sesi/${sesi.id}`, {
         method: "PUT",
@@ -88,6 +93,27 @@ function ActivityCard({ sesi, onDelete }: { sesi: SesiKelas; onDelete: () => voi
         </button>
         {msg && <span className="text-xs text-body/50">{msg}</span>}
       </div>
+
+      {popupError && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setPopupError(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-none">
+                <i className="ri-error-warning-line text-xl" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-ink mb-1">Perhatian</h3>
+                <p className="text-sm text-body/80">{popupError}</p>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setPopupError(null)} className="bg-primary text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-primary/80 transition">
+                Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
