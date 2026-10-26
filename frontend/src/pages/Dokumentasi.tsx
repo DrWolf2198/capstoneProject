@@ -20,6 +20,12 @@ function toDateStr(d: Date): string {
   return `${y}-${m}-${dd}`;
 }
 
+function fmtTanggal(iso: string): string {
+  const d = new Date(iso + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
 function startOfWeek(d: Date): Date {
   const x = new Date(d);
   const day = x.getDay();
@@ -359,9 +365,9 @@ export default function WeeklyActivities() {
       </div>
 
       <div className="mt-6">
-        <h2 className="font-bold text-ink mb-3">Dokumentasi {selectedDate}</h2>
+        <h2 className="font-bold text-ink mb-3">Dokumentasi {fmtTanggal(selectedDate)}</h2>
         {dokumentasi.length === 0 ? (
-          <p className="text-sm text-body/50">Belum ada dokumentasi pada hari ini.</p>
+          <p className="text-sm text-body/50">Belum ada dokumentasi pada tanggal ini.</p>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {dokumentasi.map((d) => (

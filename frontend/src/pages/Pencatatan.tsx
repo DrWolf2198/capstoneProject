@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { cardCls } from "../components/ui";
 import { api } from "../lib/api";
+import { getUser } from "../lib/auth";
 import type { Aspek, Catatan, Kategori, Kelas, Murid, Pencatatan } from "../types";
 
 interface PenilaianItem {
@@ -73,6 +74,7 @@ function fmtWeekLabel(weekStart: Date): string {
 }
 
 export default function Pencatatan() {
+  const user = getUser();
   const [murid, setMurid] = useState<Murid[]>([]);
   const [kelas, setKelas] = useState<Kelas[]>([]);
   const [aspek, setAspek] = useState<Aspek[]>([]);
@@ -87,6 +89,8 @@ export default function Pencatatan() {
   const [catatan, setCatatan] = useState<Catatan[]>([]);
   const [isiCatatan, setIsiCatatan] = useState("");
   const [msgCatatan, setMsgCatatan] = useState("");
+  const [editingCatatanId, setEditingCatatanId] = useState<number | null>(null);
+  const [editCatatanIsi, setEditCatatanIsi] = useState("");
 
   useEffect(() => {
     api<Murid[]>("/murid").then(setMurid).catch(() => {});
@@ -207,6 +211,43 @@ export default function Pencatatan() {
       api<Catatan[]>(`/catatan/murid/${selectedId}`).then(setCatatan).catch(() => {});
     } catch (err) {
       setMsgCatatan(err instanceof Error ? err.message : "Gagal mengirim");
+      setTimeout(() => setMsgCatatan(""), 2500);
+    }
+  };
+
+  const mulaiEditCatatan = (c: Catatan) => {
+    setEditingCatatanId(c.id);
+    setEditCatatanIsi(c.isi);
+  };
+
+  const simpanEditCatatan = async () => {
+    if (!editingCatatanId || !editCatatanIsi.trim()) return;
+    try {
+      await api(`/catatan/${editingCatatanId}`, {
+        method: "PUT",
+        body: JSON.stringify({ isi: editCatatanIsi.trim() }),
+      });
+      setEditingCatatanId(null);
+      setEditCatatanIsi("");
+      if (selectedId) api<Catatan[]>(`/catatan/murid/${selectedId}`).then(setCatatan).catch(() => {});
+    } catch (err) {
+      setMsgCatatan(err instanceof Error ? err.message : "Gagal menyimpan");
+      setTimeout(() => setMsgCatatan(""), 2500);
+    }
+  };
+
+  const batalEditCatatan = () => {
+    setEditingCatatanId(null);
+    setEditCatatanIsi("");
+  };
+
+  const hapusCatatan = async (id: number) => {
+    if (!confirm("Hapus catatan ini?")) return;
+    try {
+      await api(`/catatan/${id}`, { method: "DELETE" });
+      if (selectedId) api<Catatan[]>(`/catatan/murid/${selectedId}`).then(setCatatan).catch(() => {});
+    } catch (err) {
+      setMsgCatatan(err instanceof Error ? err.message : "Gagal menghapus");
       setTimeout(() => setMsgCatatan(""), 2500);
     }
   };
@@ -402,6 +443,7 @@ export default function Pencatatan() {
                   <div className="space-y-3 mb-4">
                     {catatan.map((c) => {
                       const isGuru = c.role === "guru";
+                      const sendiri = c.pengguna_id === user?.id;
                       return (
                         <div key={c.id} className="flex gap-2.5">
                           <div
@@ -411,11 +453,39 @@ export default function Pencatatan() {
                           >
                             {c.nama_pengguna?.charAt(0) ?? "?"}
                           </div>
-                          <div className="min-w-0">
-                            <div className="text-[11px] text-body/50">
-                              {c.nama_pengguna ?? "?"} · {fmtWaktu(c.created_at)}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[11px] text-body/50">
+                                {c.nama_pengguna ?? "?"} · {fmtWaktu(c.created_at)}
+                              </span>
+                              {sendiri && editingCatatanId !== c.id && (
+                                <div className="ml-auto flex items-center gap-2">
+                                  <button onClick={() => mulaiEditCatatan(c)} className="text-[11px] font-semibold text-primary hover:underline">
+                                    <i className="ri-edit-line" /> Edit
+                                  </button>
+                                  <button onClick={() => hapusCatatan(c.id)} className="text-[11px] font-semibold text-red-500 hover:underline">
+                                    <i className="ri-delete-bin-line" /> Hapus
+                                  </button>
+                                </div>
+                              )}
                             </div>
-                            <p className="text-sm text-ink">{c.isi}</p>
+                            {editingCatatanId === c.id ? (
+                              <div className="space-y-2 mt-1">
+                                <textarea
+                                  className="w-full border border-black/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary resize-none"
+                                  rows={2}
+                                  value={editCatatanIsi}
+                                  onChange={(e) => setEditCatatanIsi(e.target.value)}
+                                  autoFocus
+                                />
+                                <div className="flex gap-2 justify-end">
+                                  <button onClick={batalEditCatatan} className="text-xs font-semibold text-body/60 hover:text-body px-2 py-1">Batal</button>
+                                  <button onClick={simpanEditCatatan} disabled={!editCatatanIsi.trim()} className="text-xs font-semibold text-white bg-primary rounded-lg px-3 py-1 hover:bg-primary/90 disabled:opacity-50">Simpan</button>
+                                </div>
+                              </div>
+                            ) : (
+                              <p className="text-sm text-ink">{c.isi}</p>
+                            )}
                           </div>
                         </div>
                       );

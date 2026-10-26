@@ -92,6 +92,17 @@ export default function CatatanPage() {
     setEditIsi("");
   };
 
+  const hapusCatatan = async (id: number) => {
+    if (!confirm("Hapus catatan ini?")) return;
+    try {
+      await api(`/catatan/${id}`, { method: "DELETE" });
+      if (muridId) load(muridId);
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Gagal menghapus");
+      setTimeout(() => setMsg(""), 2500);
+    }
+  };
+
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-black text-ink mb-1">Catatan Guru &amp; Orang Tua</h1>
@@ -148,12 +159,20 @@ export default function CatatanPage() {
                       </span>
                       <span className="text-[10px] text-body/50">{fmtWaktu(c.created_at)}</span>
                       {sendiri && editingId !== c.id && (
-                        <button
-                          onClick={() => mulaiEdit(c)}
-                          className="ml-auto text-[11px] font-semibold text-primary hover:underline"
-                        >
-                          <i className="ri-edit-line" /> Edit
-                        </button>
+                        <div className="ml-auto flex items-center gap-2">
+                          <button
+                            onClick={() => mulaiEdit(c)}
+                            className="text-[11px] font-semibold text-primary hover:underline"
+                          >
+                            <i className="ri-edit-line" /> Edit
+                          </button>
+                          <button
+                            onClick={() => hapusCatatan(c.id)}
+                            className="text-[11px] font-semibold text-red-500 hover:underline"
+                          >
+                            <i className="ri-delete-bin-line" /> Hapus
+                          </button>
+                        </div>
                       )}
                     </div>
                     {editingId === c.id ? (

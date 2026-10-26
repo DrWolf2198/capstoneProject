@@ -95,6 +95,16 @@ export default function OrtuDashboard() {
   const kelasNama = kelas.find((k) => k.id === murid[0]?.kelas_id)?.nama ?? "-";
   const media = dokumentasi.filter((d) => d.tipe !== "catatan_observasi");
 
+  const mediaByTanggal = useMemo(() => {
+    const groups: Record<string, Dokumentasi[]> = {};
+    media.forEach((d) => {
+      const t = d.tanggal ?? "";
+      if (!groups[t]) groups[t] = [];
+      groups[t].push(d);
+    });
+    return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [media]);
+
   const tertinggi = useMemo(() => {
     if (!ringkasan || ringkasan.radar.length === 0) return null;
     return [...ringkasan.radar].sort((a, b) => b.level - a.level)[0];
@@ -213,33 +223,43 @@ export default function OrtuDashboard() {
         {media.length === 0 ? (
           <p className="text-sm text-body/50">Belum ada dokumentasi.</p>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-            {media.map((d) => (
-                <button
-                  key={d.id}
-                  type="button"
-                  onClick={() => d.url && setSelectedMedia(d)}
-                  disabled={!d.url}
-                  className="text-left group disabled:cursor-default"
-                >
-                  <div className="aspect-[7/5] rounded-lg overflow-hidden bg-slate-200 flex items-center justify-center group-hover:opacity-90 transition">
-                    {d.tipe === "video" ? (
-                      <div className="w-full h-full bg-slate-800 flex items-center justify-center">
-                        <i className="ri-play-circle-fill text-4xl text-white" />
+          <div className="space-y-5">
+            {mediaByTanggal.map(([tanggal, items]) => (
+              <div key={tanggal}>
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-sm font-bold text-ink">{fmtTanggal(tanggal)}</h3>
+                  <span className="text-[11px] text-body/40">({items.length} file)</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                  {items.map((d) => (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => d.url && setSelectedMedia(d)}
+                      disabled={!d.url}
+                      className="text-left group disabled:cursor-default"
+                    >
+                      <div className="aspect-[7/5] rounded-lg overflow-hidden bg-slate-200 flex items-center justify-center group-hover:opacity-90 transition">
+                        {d.tipe === "video" ? (
+                          <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                            <i className="ri-play-circle-fill text-4xl text-white" />
+                          </div>
+                        ) : d.url ? (
+                          <img src={d.url} alt={d.deskripsi ?? ""} className="w-full h-full object-cover" />
+                        ) : (
+                          <i className="ri-image-line text-3xl text-slate-400" />
+                        )}
                       </div>
-                    ) : d.url ? (
-                      <img src={d.url} alt={d.deskripsi ?? ""} className="w-full h-full object-cover" />
-                    ) : (
-                      <i className="ri-image-line text-3xl text-slate-400" />
-                    )}
-                  </div>
-                  <div className="mt-1 text-[11px] text-body/50 capitalize truncate">
-                    {d.tipe.replace("_", " ")}
-                  </div>
-                </button>
-              ))}
-            </div>
-          )}
+                      <div className="mt-1 text-[11px] text-body/50 capitalize truncate">
+                        {d.tipe.replace("_", " ")}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         </div>
       </div>
 

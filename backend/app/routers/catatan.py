@@ -45,6 +45,22 @@ def update_catatan(
     return _to_out(c)
 
 
+@router.delete("/{catatan_id}", status_code=204)
+def delete_catatan(
+    catatan_id: int,
+    db: Session = Depends(get_db),
+    user: models.Pengguna = Depends(get_current_user),
+):
+    """Hapus catatan (hanya penulisnya)."""
+    c = db.get(models.Catatan, catatan_id)
+    if c is None:
+        raise HTTPException(404, "Catatan tidak ditemukan")
+    if c.pengguna_id != user.id:
+        raise HTTPException(403, "Hanya penulis yang bisa menghapus")
+    db.delete(c)
+    db.commit()
+
+
 @router.get("/murid/{murid_id}", response_model=list[schemas.CatatanOut])
 def list_catatan(
     murid_id: int,
