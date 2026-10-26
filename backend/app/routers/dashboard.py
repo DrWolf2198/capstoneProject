@@ -47,10 +47,17 @@ def stats(
     user: models.Pengguna = Depends(require_role(models.ROLE_ADMIN, models.ROLE_GURU)),
 ):
     """Hitungan ringkas untuk kartu statistik dashboard."""
+    gurus = (
+        db.query(models.Pengguna)
+        .filter(models.Pengguna.role == models.ROLE_GURU)
+        .order_by(models.Pengguna.nama)
+        .all()
+    )
     return {
         "murid": len(access.murid_ids_for(user, db)),
         "kelas": db.query(models.Kelas).count(),
-        "guru": db.query(models.Pengguna).filter(models.Pengguna.role == models.ROLE_GURU).count(),
+        "guru": len(gurus),
+        "guru_list": [{"id": g.id, "nama": g.nama, "role": g.role} for g in gurus],
     }
 
 

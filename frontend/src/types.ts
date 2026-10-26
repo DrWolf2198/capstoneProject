@@ -23,6 +23,7 @@ export interface Murid {
   tanggal_lahir?: string | null;
   jenis_kelamin?: string | null;
   foto?: string | null;
+  orang_tua?: { nama: string; no_hp?: string | null; hubungan?: string | null }[];
 }
 
 export interface Aspek {

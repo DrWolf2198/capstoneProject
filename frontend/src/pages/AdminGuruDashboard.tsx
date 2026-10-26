@@ -24,6 +24,8 @@ export default function AdminGuruDashboard() {
   const [kategori, setKategori] = useState<Kategori[]>([]);
   const [distribusi, setDistribusi] = useState<DistribusiResponse | null>(null);
   const [guruCount, setGuruCount] = useState(0);
+  const [guruList, setGuruList] = useState<{ id: number; nama: string; role: string }[]>([]);
+  const [showGuru, setShowGuru] = useState(false);
   const [detailMurid, setDetailMurid] = useState<Murid | null>(null);
   const [kegiatan, setKegiatan] = useState<Dokumentasi[]>([]);
   const [selectedMedia, setSelectedMedia] = useState<Dokumentasi | null>(null);
@@ -34,7 +36,12 @@ export default function AdminGuruDashboard() {
     api<Aspek[]>("/aspek").then(setAspek).catch(() => {});
     api<Kategori[]>("/kategori").then(setKategori).catch(() => {});
     api<DistribusiResponse>("/dashboard/distribusi").then(setDistribusi).catch(() => {});
-    api<{ guru: number }>("/dashboard/stats").then((d) => setGuruCount(d.guru)).catch(() => {});
+    api<{ guru: number; guru_list: { id: number; nama: string; role: string }[] }>("/dashboard/stats")
+      .then((d) => {
+        setGuruCount(d.guru);
+        setGuruList(d.guru_list ?? []);
+      })
+      .catch(() => {});
     api<Dokumentasi[]>("/dokumentasi").then(setKegiatan).catch(() => {});
   }, []);
 
@@ -58,10 +65,10 @@ export default function AdminGuruDashboard() {
 
   const mediaKegiatan = kegiatan.filter((d) => d.url);
 
-  const stats: { label: string; value: number; icon: string; to?: string }[] = [
+  const stats: { label: string; value: number; icon: string; onClick?: () => void }[] = [
     { label: "Murid", value: murid.length, icon: "ri-user-smile-line" },
     { label: "Kelas", value: kelas.length, icon: "ri-building-line" },
-    { label: "Guru", value: guruCount, icon: "ri-team-line", to: "/data-master?tab=pengguna" },
+    { label: "Guru", value: guruCount, icon: "ri-team-line", onClick: () => setShowGuru(true) },
   ];
 
   return (
@@ -82,10 +89,10 @@ export default function AdminGuruDashboard() {
               </div>
             </div>
           );
-          return s.to ? (
-            <Link key={s.label} to={s.to} className={`${cardCls} hover:shadow-md transition cursor-pointer`}>
+          return s.onClick ? (
+            <button key={s.label} onClick={s.onClick} className={`${cardCls} hover:shadow-md transition cursor-pointer text-left w-full`}>
               {inner}
-            </Link>
+            </button>
           ) : (
             <div key={s.label} className={cardCls}>{inner}</div>
           );
@@ -198,6 +205,36 @@ export default function AdminGuruDashboard() {
           deskripsi={selectedMedia.deskripsi}
           onClose={() => setSelectedMedia(null)}
         />
+      )}
+
+      {showGuru && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowGuru(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-ink">Daftar Guru</h3>
+              <button onClick={() => setShowGuru(false)} className="text-body/50 hover:text-body" aria-label="Tutup">
+                <i className="ri-close-line text-xl" />
+              </button>
+            </div>
+            {guruList.length === 0 ? (
+              <p className="text-sm text-body/50">Belum ada guru.</p>
+            ) : (
+              <ul className="divide-y divide-black/5">
+                {guruList.map((g) => (
+                  <li key={g.id} className="py-2.5 flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/15 text-primary flex items-center justify-center text-sm font-bold">
+                      {g.nama.charAt(0)}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-ink">{g.nama}</div>
+                      <div className="text-xs text-body/50 capitalize">{g.role}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );

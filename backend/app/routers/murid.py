@@ -15,7 +15,22 @@ def list_murid(db: Session = Depends(get_db), user: models.Pengguna = Depends(ge
     ids = access.murid_ids_for(user, db)
     if not ids:
         return []
-    return db.query(models.Murid).filter(models.Murid.id.in_(ids)).order_by(models.Murid.nama).all()
+    rows = db.query(models.Murid).filter(models.Murid.id.in_(ids)).order_by(models.Murid.nama).all()
+    result = []
+    for m in rows:
+        out = schemas.MuridOut.model_validate(m)
+        links = (
+            db.query(models.MuridOrangTua, models.Pengguna)
+            .join(models.Pengguna, models.MuridOrangTua.pengguna_id == models.Pengguna.id)
+            .filter(models.MuridOrangTua.murid_id == m.id)
+            .all()
+        )
+        out.orang_tua = [
+            schemas.MuridOrtuInfo(nama=p.nama, no_hp=p.no_hp, hubungan=link.hubungan)
+            for link, p in links
+        ]
+        result.append(out)
+    return result
 
 
 @router.post("", response_model=schemas.MuridOut, status_code=201)

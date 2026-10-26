@@ -73,6 +73,12 @@ class MuridCreate(BaseModel):
     foto: Optional[str] = None
 
 
+class MuridOrtuInfo(BaseModel):
+    nama: str
+    no_hp: Optional[str] = None
+    hubungan: Optional[str] = None
+
+
 class MuridOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -82,6 +88,7 @@ class MuridOut(BaseModel):
     tanggal_lahir: Optional[date] = None
     jenis_kelamin: Optional[str] = None
     foto: Optional[str] = None
+    orang_tua: list[MuridOrtuInfo] = []
 
 
 class MuridOrangTuaLink(BaseModel):

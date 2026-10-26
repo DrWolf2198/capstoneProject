@@ -475,6 +475,7 @@ function MuridTab() {
       body: JSON.stringify({ pengguna_id: Number(linkOrtu), hubungan }),
     });
     setLinkMurid(""); setLinkOrtu(""); setHubungan("");
+    load();
   };
 
   const del = async (id: number) => {
@@ -547,6 +548,13 @@ function MuridTab() {
                 </span>
                 {m.tempat_lahir && <span className="ml-2 text-sm text-body/60">· {m.tempat_lahir}</span>}
                 {m.tanggal_lahir && <span className="ml-2 text-sm text-body/60">· {m.tanggal_lahir}</span>}
+                {m.orang_tua && m.orang_tua.length > 0 ? (
+                  <div className="mt-0.5 text-xs text-body/50">
+                    Orang tua: {m.orang_tua.map((o) => `${o.nama}${o.no_hp ? ` (${o.no_hp})` : ""}`).join(", ")}
+                  </div>
+                ) : (
+                  <div className="mt-0.5 text-xs text-body/40">Belum ada orang tua</div>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <button onClick={() => startEdit(m)} className="text-primary hover:text-primary/70 text-sm" aria-label="Edit">
