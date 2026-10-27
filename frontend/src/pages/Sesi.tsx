@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { btnPrimary, cardCls, inputCls, selectCls } from "../components/ui";
 import { api } from "../lib/api";
+import { getToken } from "../lib/auth";
 import type { Kelas, Murid, SesiKelas } from "../types";
 
 const STATUS = [
@@ -23,6 +24,9 @@ export default function Absensi() {
   const [sesiId, setSesiId] = useState<number | null>(null);
   const [absensi, setAbsensi] = useState<Record<number, AbsensiState>>({});
   const [msg, setMsg] = useState("");
+  const [rekapIds, setRekapIds] = useState<number[]>([]);
+  const [periode, setPeriode] = useState(1);
+  const [rekapKelas, setRekapKelas] = useState("");
 
   useEffect(() => {
     api<Kelas[]>("/kelas")
@@ -93,6 +97,39 @@ export default function Absensi() {
     }
   };
 
+  const toggleRekap = (id: number) => {
+    setRekapIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const exportAbsensi = async () => {
+    if (rekapIds.length === 0) {
+      setMsg("Pilih minimal satu murid untuk direkap.");
+      return;
+    }
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/laporan/export/absensi?murid_ids=${rekapIds.join(",")}&periode=${periode}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        setMsg((err && (err.detail || err.message)) || "Gagal export");
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `rekap-kehadiran-${periode}bulan.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setMsg(err instanceof Error ? err.message : "Gagal export");
+    }
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-black text-ink mb-1">Absensi</h1>
@@ -153,6 +190,49 @@ export default function Absensi() {
           );
         })}
         {muridKelas.length === 0 && <p className="text-sm text-body/50">Tidak ada murid di kelas ini.</p>}
+      </div>
+
+      <div className={`${cardCls} mt-6`}>
+        <h2 className="font-bold text-ink mb-1">Rekap Kehadiran</h2>
+        <p className="text-sm text-body/60 mb-4">Pilih murid (bisa lebih dari satu) + periode, lalu export ke Excel.</p>
+        <div className="flex flex-wrap items-end gap-3 mb-4">
+          <div className="min-w-[160px]">
+            <label className="block text-xs text-body/60 mb-1">Kelas</label>
+            <select className={selectCls} value={rekapKelas} onChange={(e) => {
+              const v = e.target.value;
+              setRekapKelas(v);
+              setRekapIds(v ? murid.filter((m) => m.kelas_id === Number(v)).map((m) => m.id) : []);
+            }}>
+              <option value="">Pilih kelas</option>
+              {kelas.map((k) => <option key={k.id} value={k.id}>{k.nama}</option>)}
+            </select>
+          </div>
+          <div className="min-w-[160px]">
+            <label className="block text-xs text-body/60 mb-1">Periode</label>
+            <select className={selectCls} value={periode} onChange={(e) => setPeriode(Number(e.target.value))}>
+              <option value={1}>1 Bulan</option>
+              <option value={3}>3 Bulan</option>
+              <option value={6}>6 Bulan</option>
+              <option value={12}>1 Tahun</option>
+            </select>
+          </div>
+          <button className={btnPrimary} onClick={exportAbsensi}>
+            <i className="ri-file-excel-2-line mr-1.5" /> Export
+          </button>
+        </div>
+        <div className="space-y-2">
+          {murid.map((m) => (
+            <label key={m.id} className="flex items-center gap-3 border border-black/10 rounded-lg px-3 py-2 cursor-pointer hover:bg-slate-50 transition">
+              <input
+                type="checkbox"
+                checked={rekapIds.includes(m.id)}
+                onChange={() => toggleRekap(m.id)}
+                className="accent-[#3B97BC]"
+              />
+              <span className="text-sm text-ink">{m.nama}</span>
+            </label>
+          ))}
+        </div>
       </div>
     </div>
   );

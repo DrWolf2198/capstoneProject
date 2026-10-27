@@ -86,6 +86,7 @@ export default function Pencatatan() {
   const [selectedDate, setSelectedDate] = useState<string>(() => toDateStr(new Date()));
   const [orangTua, setOrangTua] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
+  const [popupError, setPopupError] = useState<string | null>(null);
   const [catatan, setCatatan] = useState<Catatan[]>([]);
   const [isiCatatan, setIsiCatatan] = useState("");
   const [msgCatatan, setMsgCatatan] = useState("");
@@ -185,7 +186,7 @@ export default function Pencatatan() {
       })
       .filter((it) => it.kategori);
     if (items.length === 0) {
-      setMsg("Pilih level minimal satu aspek dulu.");
+      setPopupError("Pilih level penilaian minimal satu aspek sebelum menyimpan.");
       return;
     }
     try {
@@ -514,6 +515,27 @@ export default function Pencatatan() {
           )}
         </div>
       </div>
+
+      {popupError && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setPopupError(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-none">
+                <i className="ri-error-warning-line text-xl" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-ink mb-1">Perhatian</h3>
+                <p className="text-sm text-body/80">{popupError}</p>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setPopupError(null)} className="bg-primary text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-primary/80 transition">
+                Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

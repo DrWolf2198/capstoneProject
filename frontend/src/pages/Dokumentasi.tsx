@@ -205,6 +205,11 @@ export default function WeeklyActivities() {
   const onFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+      setPopupError("Ukuran file melebihi batas maksimal 20 MB.");
+      e.target.value = "";
+      return;
+    }
     setUploading(true);
     setMsg("");
     try {
@@ -216,7 +221,7 @@ export default function WeeklyActivities() {
       });
       setUrl(res.url);
     } catch (err) {
-      setMsg(err instanceof Error ? err.message : "Upload gagal");
+      setPopupError(err instanceof Error ? err.message : "Upload gagal");
     } finally {
       setUploading(false);
       e.target.value = "";
