@@ -32,6 +32,10 @@ def create_pengguna(body: schemas.PenggunaCreate, db: Session = Depends(get_db),
         else:
             raise HTTPException(400, "Email wajib diisi")
 
+    # cek duplikat nomor HP (untuk orang tua)
+    if body.no_hp and db.query(models.Pengguna).filter(models.Pengguna.no_hp == body.no_hp).first():
+        raise HTTPException(400, "Nomor telepon sudah terdaftar")
+
     if db.query(models.Pengguna).filter(models.Pengguna.email == email).first():
         raise HTTPException(400, "Email sudah terdaftar")
     p = models.Pengguna(

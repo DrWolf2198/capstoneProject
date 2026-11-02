@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useNavigate } from "react-router-dom";
 import Layout from "./components/Layout";
+import { btnPrimary } from "./components/ui";
 import { getUser } from "./lib/auth";
 import type { Role } from "./types";
 import Dashboard from "./pages/Dashboard";
@@ -20,9 +21,26 @@ function RequireAuth({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function Forbidden() {
+  const navigate = useNavigate();
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center text-center px-4">
+      <div className="w-16 h-16 rounded-full bg-red-100 text-red-600 flex items-center justify-center mb-4">
+        <i className="ri-lock-line text-3xl" />
+      </div>
+      <h1 className="text-2xl font-black text-ink mb-2">Akses Ditolak</h1>
+      <p className="text-sm text-body/60 mb-6">Kamu tidak memiliki izin untuk mengakses halaman ini.</p>
+      <button onClick={() => navigate("/dashboard")} className={btnPrimary}>
+        Kembali ke Dashboard
+      </button>
+    </div>
+  );
+}
+
 function RequireRole({ roles, children }: { roles: Role[]; children: ReactNode }) {
   const user = getUser();
-  if (!user || !roles.includes(user.role)) return <Navigate to="/dashboard" replace />;
+  if (!user) return <Navigate to="/login" replace />;
+  if (!roles.includes(user.role)) return <Forbidden />;
   return <>{children}</>;
 }
 

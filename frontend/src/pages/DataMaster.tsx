@@ -409,6 +409,7 @@ function MuridTab() {
   const [linkOrtu, setLinkOrtu] = useState("");
   const [hubungan, setHubungan] = useState("");
   const [popupError, setPopupError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const load = useCallback(() => {
     api<Murid[]>("/murid").then(setRows).catch(() => {});
@@ -455,10 +456,13 @@ function MuridTab() {
       jenis_kelamin: jk || null,
       foto: foto || null,
     };
+    const kelasNama = kelas.find((k) => k.id === Number(kelasId))?.nama ?? "-";
+    const jkLabel = jk === "L" ? "Laki-laki" : jk === "P" ? "Perempuan" : "-";
     if (editingId) {
       await api(`/murid/${editingId}`, { method: "PUT", body: JSON.stringify(body) });
     } else {
       await api("/murid", { method: "POST", body: JSON.stringify(body) });
+      setSuccess(`Data murid "${nama}" berhasil ditambahkan.\n\nTempat lahir: ${tempatLahir || "-"}\nKelas: ${kelasNama}\nTanggal lahir: ${tgl || "-"}\nJenis kelamin: ${jkLabel}`);
     }
     reset();
     load();
@@ -476,12 +480,19 @@ function MuridTab() {
 
   const link = async (e: React.FormEvent) => {
     e.preventDefault();
-    await api(`/murid/${linkMurid}/ortu`, {
-      method: "POST",
-      body: JSON.stringify({ pengguna_id: Number(linkOrtu), hubungan }),
-    });
-    setLinkMurid(""); setLinkOrtu(""); setHubungan("");
-    load();
+    try {
+      await api(`/murid/${linkMurid}/ortu`, {
+        method: "POST",
+        body: JSON.stringify({ pengguna_id: Number(linkOrtu), hubungan }),
+      });
+      const muridNama = rows.find((m) => m.id === Number(linkMurid))?.nama ?? "";
+      const ortuNama = ortu.find((o) => o.id === Number(linkOrtu))?.nama ?? "";
+      setSuccess(`Orang tua "${ortuNama}" berhasil dikaitkan dengan murid "${muridNama}".`);
+      setLinkMurid(""); setLinkOrtu(""); setHubungan("");
+      load();
+    } catch (err) {
+      setPopupError(err instanceof Error ? err.message : "Gagal mengaitkan orang tua");
+    }
   };
 
   const del = async (id: number) => {
@@ -595,6 +606,27 @@ function MuridTab() {
           </div>
         </div>
       )}
+
+      {success && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSuccess(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-none">
+                <i className="ri-check-line text-xl" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-ink mb-1">Berhasil</h3>
+                <p className="text-sm text-body/80 whitespace-pre-line">{success}</p>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setSuccess(null)} className="bg-primary text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-primary/80 transition">
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -609,6 +641,8 @@ function PenggunaTab({ fixedRole }: { fixedRole: "guru" | "ortu" | "admin" }) {
   const [noHp, setNoHp] = useState("");
   const [password, setPassword] = useState("");
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [popupError, setPopupError] = useState<string | null>(null);
 
   const load = useCallback(() => {
     api<Pengguna[]>("/pengguna").then((all) => setRows(all.filter((p) => p.role === fixedRole))).catch(() => {});
@@ -625,20 +659,25 @@ function PenggunaTab({ fixedRole }: { fixedRole: "guru" | "ortu" | "admin" }) {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingId) {
-      const payload: Record<string, string> = { nama };
-      if (isOrtu) payload.no_hp = noHp;
-      else payload.email = email;
-      if (password) payload.password = password;
-      await api(`/pengguna/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
-    } else {
-      const payload: Record<string, string> = { role: fixedRole, nama, password };
-      if (isOrtu) payload.no_hp = noHp;
-      else payload.email = email;
-      await api("/pengguna", { method: "POST", body: JSON.stringify(payload) });
+    try {
+      if (editingId) {
+        const payload: Record<string, string> = { nama };
+        if (isOrtu) payload.no_hp = noHp;
+        else payload.email = email;
+        if (password) payload.password = password;
+        await api(`/pengguna/${editingId}`, { method: "PUT", body: JSON.stringify(payload) });
+      } else {
+        const payload: Record<string, string> = { role: fixedRole, nama, password };
+        if (isOrtu) payload.no_hp = noHp;
+        else payload.email = email;
+        await api("/pengguna", { method: "POST", body: JSON.stringify(payload) });
+        setSuccess(`Data ${label} "${nama}" berhasil ditambahkan.\n\n${isOrtu ? "No. HP: " + noHp : "Email: " + email}`);
+      }
+      reset();
+      load();
+    } catch (err) {
+      setPopupError(err instanceof Error ? err.message : "Gagal menyimpan");
     }
-    reset();
-    load();
   };
 
   const startEdit = (p: Pengguna) => {
@@ -701,6 +740,48 @@ function PenggunaTab({ fixedRole }: { fixedRole: "guru" | "ortu" | "admin" }) {
           ))}
         </ul>
       </div>
+
+      {success && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setSuccess(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center flex-none">
+                <i className="ri-check-line text-xl" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-ink mb-1">Berhasil</h3>
+                <p className="text-sm text-body/80 whitespace-pre-line">{success}</p>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setSuccess(null)} className="bg-primary text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-primary/80 transition">
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {popupError && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setPopupError(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center flex-none">
+                <i className="ri-error-warning-line text-xl" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-ink mb-1">Perhatian</h3>
+                <p className="text-sm text-body/80">{popupError}</p>
+              </div>
+            </div>
+            <div className="flex justify-end mt-4">
+              <button onClick={() => setPopupError(null)} className="bg-primary text-white rounded-lg px-4 py-2 text-sm font-semibold hover:bg-primary/80 transition">
+                Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
