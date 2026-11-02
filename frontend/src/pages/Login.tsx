@@ -48,7 +48,8 @@ export default function Login() {
         </p>
         <form onSubmit={submit} className="flex flex-col gap-4">
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2">
+            <div className="flex items-center gap-2 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 font-medium">
+              <i className="ri-error-warning-line text-base" />
               {error}
             </div>
           )}

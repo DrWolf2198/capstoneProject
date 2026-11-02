@@ -20,7 +20,7 @@ export async function api<T = unknown>(
 
   const res = await fetch(`${BASE}${path}`, { ...options, headers });
 
-  if (res.status === 401) {
+  if (res.status === 401 && !path.startsWith("/auth/login")) {
     localStorage.removeItem("kiddytracker_token");
     localStorage.removeItem("kiddytracker_user");
     window.location.href = "/login";
